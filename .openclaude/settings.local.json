@@ -1,0 +1,38 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm --version)",
+      "Bash(npm install:*)",
+      "Bash(npm run:*)",
+      "Bash(taskkill //F //IM node.exe)",
+      "Bash(npm ls:*)",
+      "Bash(node -e \"const p=require\\(''''./node_modules/routing-controllers/package.json''''\\); console.log\\(''''routing-controllers'''', p.version\\); console.log\\(''''deps:'''', JSON.stringify\\(p.dependencies\\)\\); console.log\\(''''peer:'''', JSON.stringify\\(p.peerDependencies||{}\\)\\)\")",
+      "Bash(printf 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==')",
+      "Bash(npx tsx:*)",
+      "Bash(curl -s -o /tmp/ocr-response.json -w \"HTTP %{http_code}\\\\n\" -F \"file=@/tmp/test-ocr.png;type=image/png\" http://localhost:3000/ocr/)",
+      "Bash(cp /tmp/test-ocr.png ./test-ocr.png)",
+      "Bash(curl -s -o /tmp/ocr-response.json -w \"HTTP %{http_code}\\\\n\" -F \"file=@test-ocr.png;type=image/png\" http://localhost:3000/ocr/)",
+      "Bash(rm ./test-ocr.png)",
+      "Bash(npx tsc:*)",
+      "Bash(node -e \"console.log\\(''multer types:'', require\\(''@types/multer/package.json''\\).version\\); console.log\\(''express types:'', require\\(''@types/express/package.json''\\).version\\); console.log\\(''typescript:'', require\\(''typescript/package.json''\\).version\\)\")",
+      "Bash(netstat -ano)",
+      "Bash(tasklist //FI \"PID eq 17512\")",
+      "Bash(tasklist /FI \"PID eq 17512\")",
+      "Bash(powershell -NoProfile -Command \"\\(Get-CimInstance Win32_Process -Filter 'ProcessId=17512'\\).CommandLine\")",
+      "Bash(taskkill:*)",
+      "Bash(curl:*)",
+      "Bash(node -e \"require\\(''fs''\\).writeFileSync\\(''test-ocr.png'', Buffer.from\\(''iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=='',''base64''\\)\\)\")",
+      "Bash(node -e \":*)",
+      "Bash(node -e \"console.log\\(Object.keys\\(require\\(''''@google-cloud/vision/build/protos/protos''''\\)\\)\\)\")",
+      "Bash(node make-test-pdf.cjs test-ocr.pdf)",
+      "Bash(powershell -NoProfile -Command \"\\(Get-CimInstance Win32_Process -Filter 'ProcessId=11836'\\).CommandLine\")",
+      "Bash(powershell -NoProfile -Command \"\\(Get-CimInstance Win32_Process -Filter ''''ProcessId=14484''''\\).CommandLine\")",
+      "Bash(powershell -NoProfile -Command \"\\(Get-CimInstance Win32_Process -Filter 'ProcessId=6900'\\).CommandLine\")",
+      "WebSearch",
+      "WebFetch(domain:docs.cloud.google.com)",
+      "Bash(npx tsx -e \":*)",
+      "Bash(./node_modules/.bin/tsx guard-smoke.ts)",
+      "Bash(cd:*)"
+    ]
+  }
+}
