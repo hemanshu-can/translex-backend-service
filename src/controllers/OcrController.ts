@@ -1,10 +1,12 @@
-import { Controller, Post, UploadedFile } from "routing-controllers";
+import { Controller, Post, UploadedFile, UseBefore } from "routing-controllers";
 import { ImageAnnotatorClient } from "@google-cloud/vision";
+import { authGuard } from "../middlewares/authGuard.js";
 
 // Creates a client (uses GOOGLE_APPLICATION_CREDENTIALS from the environment)
 const client = new ImageAnnotatorClient();
 
 @Controller("/ocr")
+@UseBefore(authGuard)
 export class OcrController {
   @Post("/")
   async extractText(
