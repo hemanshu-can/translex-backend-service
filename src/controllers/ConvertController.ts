@@ -7,9 +7,10 @@ import {
 } from "routing-controllers";
 import { convertText } from "../lib/deepseek.js";
 import { convertInputGuard } from "../middlewares/convertInputGuard.js";
+import { authGuard } from "../middlewares/authGuard.js";
 
 @Controller("/convert")
-@UseBefore(convertInputGuard)
+@UseBefore(authGuard, convertInputGuard)
 export class ConvertController {
   @Post("/")
   async convert(@Body() body: { text?: string }): Promise<{ text: string }> {

@@ -32,7 +32,8 @@
       "WebFetch(domain:docs.cloud.google.com)",
       "Bash(npx tsx -e \":*)",
       "Bash(./node_modules/.bin/tsx guard-smoke.ts)",
-      "Bash(cd:*)"
+      "Bash(cd:*)",
+      "Bash(JWT_SECRET=test-secret node -e \":*)"
     ]
   }
 }
