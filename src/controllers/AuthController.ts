@@ -7,7 +7,7 @@ import {
   Res,
   UnauthorizedError,
 } from "routing-controllers";
-import { Response } from "express";
+import { CookieOptions, Response } from "express";
 import { google } from "googleapis";
 import { getOAuth2Client } from "../lib/googleOAuth.js";
 import {
@@ -19,6 +19,21 @@ import {
 } from "../lib/jwt.js";
 
 const FRONTEND_URL = process.env.FRONTEND_URL ?? "http://localhost:3000";
+
+// Cookie options must be identical on set and clear. SameSite must be "none"
+// (with Secure) for cross-site delivery: the Vercel frontend and Render
+// backend are different registrable domains, and Lax cookies are never sent on
+// cross-site XHR — which is why /auth/me returned 401 in prod. In dev both are
+// localhost (same-site), where Lax works and None would be rejected by Chrome
+// because the cookie isn't Secure.
+function authCookieOptions(): CookieOptions {
+  return {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+    path: "/",
+  };
+}
 
 @Controller("/auth")
 export class AuthController {
@@ -48,12 +63,7 @@ export class AuthController {
     // Match the options the cookie was set with (secure, sameSite, path) so
     // the browser actually deletes it — clearCookie with mismatched options
     // can silently leave the cookie in place.
-    res.clearCookie("auth_token", {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      path: "/",
-    });
+    res.clearCookie("auth_token", authCookieOptions());
     return res;
   }
 
@@ -137,11 +147,8 @@ export class AuthController {
 
       // 6. Store your JWT in a secure, HttpOnly cookie
       res.cookie("auth_token", authToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
+        ...authCookieOptions(),
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-        path: "/",
       });
       console.log(`OAuth callback: auth_token cookie set elapsedMs=${Date.now() - startedAt}`);
 
