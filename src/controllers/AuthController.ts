@@ -23,7 +23,7 @@ const FRONTEND_URL = process.env.FRONTEND_URL ?? "http://localhost:3000";
 @Controller("/auth")
 export class AuthController {
   @Get("/me")
-  me(@CookieParam("auth_token") token: string | undefined): AuthUser {
+  me(@CookieParam("auth_token") token: string): AuthUser {
     // The frontend calls this once on page load (withCredentials) to decide
     // whether to show the workbench (200 -> user) or the login gate (401).
     if (!token) {
@@ -75,10 +75,15 @@ export class AuthController {
 
   @Get("/google/callback")
   async handleGoogleCallback(
-    @QueryParam("code") code: string | undefined,
-    @QueryParam("state") state: string | undefined,
+    @QueryParam("code") code: string,
+    @QueryParam("state") state: string,
     @Res() res: Response,
   ): Promise<Response> {
+    // NOTE: these params are deliberately typed `string` (not `string |
+    // undefined`). A union erases to design:type Object, which makes
+    // routing-controllers try JSON.parse() on the raw value — Google's
+    // auth code and the state JWT are not JSON, so the callback 400'd in
+    // prod. Absence is handled by the `!code` / `!state` guards below.
     const startedAt = Date.now();
     try {
       // 1. Validate OAuth state (CSRF protection)
