@@ -2,16 +2,16 @@ import type { NextFunction, Request, Response } from "express";
 import { BadRequestError } from "routing-controllers";
 
 /**
- * Input guard for the /convert endpoint. The body text is handed straight to
- * the LLM, so it is screened for common prompt-injection and abuse patterns
- * before it ever reaches DeepSeek. This is a heuristic filter, not a
+ * Input guard for the /convert endpoint. The page texts are handed straight to
+ * the LLM, so they are screened for common prompt-injection and abuse patterns
+ * before they ever reach DeepSeek. This is a heuristic filter, not a
  * guarantee — treat it as one layer of defence, not a replacement for it.
  *
  * Rejected requests get a 400 with the specific rule(s) that tripped, so a
  * legitimate document that looks suspicious is easy to debug.
  */
 
-/** Ceiling for /convert input. Override with MAX_CONVERT_TEXT_LENGTH. */
+/** Per-page ceiling for /convert input. Override with MAX_CONVERT_TEXT_LENGTH. */
 const MAX_TEXT_LENGTH = Number(process.env.MAX_CONVERT_TEXT_LENGTH) || 50_000;
 
 /** \n \r \t are deliberately absent — they're legitimate in prose. */
@@ -94,18 +94,45 @@ function isEncodedPayload(text: string): boolean {
   return false;
 }
 
-/** Express middleware: rejects the request with a 400 if the body text fails any check. */
+/**
+ * Express middleware: rejects the request with a 400 if the body is not a
+ * non-empty pages array, or if any page text fails the checks. Blank scanned
+ * pages are allowed through — only a request whose pages are all textless is
+ * rejected.
+ */
 export function convertInputGuard(
   req: Request,
   res: Response,
   next: NextFunction,
 ): void {
   const body = req.body as Record<string, unknown> | undefined;
-  const text = typeof body?.text === "string" ? body.text : "";
-  const issues = findConvertInputIssues(text);
+  const pages = Array.isArray(body?.pages) ? body.pages : null;
+  const issues: string[] = [];
+  if (!pages || pages.length === 0) {
+    issues.push("pages is missing or empty");
+  } else {
+    let hasText = false;
+    pages.forEach((entry, i) => {
+      const page = (entry ?? {}) as { pageNumber?: unknown; text?: unknown };
+      if (typeof page.pageNumber !== "number") {
+        issues.push(`pages[${i}].pageNumber must be a number`);
+      }
+      if (typeof page.text !== "string") {
+        issues.push(`pages[${i}].text must be a string`);
+      } else if (page.text !== "") {
+        hasText = true;
+        for (const reason of findConvertInputIssues(page.text)) {
+          issues.push(`pages[${i}]: ${reason}`);
+        }
+      }
+    });
+    if (!hasText) {
+      issues.push("pages contain no text");
+    }
+  }
   if (issues.length > 0) {
     next(
-      new BadRequestError(`Rejected text before LLM call: ${issues.join("; ")}`),
+      new BadRequestError(`Rejected input before LLM call: ${issues.join("; ")}`),
     );
     return;
   }

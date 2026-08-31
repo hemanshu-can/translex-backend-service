@@ -11,9 +11,9 @@ export class OcrController {
   @Post("/")
   async extractText(
     @UploadedFile("file") file: Express.Multer.File,
-  ): Promise<{ text: string }> {
+  ): Promise<{ pages: { pageNumber: number; text: string }[] }> {
     if (file.mimetype === "application/pdf") {
-      return { text: await this.extractPdfText(file.buffer) };
+      return { pages: await this.extractPdfPages(file.buffer) };
     }
     // Performs text detection on the uploaded image
     const [result] = await client.textDetection(file.buffer);
@@ -21,12 +21,15 @@ export class OcrController {
     const detections = result.textAnnotations ?? [];
     console.log("Detected text:", detections.map((d) => d.description));
     const text = detections.map((d) => d.description ?? "").join("\n");
-    return { text };
+    return { pages: [{ pageNumber: 1, text }] };
   }
 
   // PDFs/TIFFs use document text detection: one response per page, and the
   // extracted text lives in fullTextAnnotation.text (textDetection is image-only).
-  private async extractPdfText(buffer: Buffer): Promise<string> {
+  // Each page response carries its 1-based page number in context.pageNumber.
+  private async extractPdfPages(
+    buffer: Buffer,
+  ): Promise<{ pageNumber: number; text: string }[]> {
     const [result] = await client.batchAnnotateFiles({
       requests: [
         {
@@ -41,7 +44,9 @@ export class OcrController {
     const fileResponses = result.responses ?? [];
     return fileResponses
       .flatMap((fileRes) => fileRes.responses ?? [])
-      .map((page) => page.fullTextAnnotation?.text ?? "")
-      .join("\n");
+      .map((page, i) => ({
+        pageNumber: page.context?.pageNumber ?? i + 1,
+        text: page.fullTextAnnotation?.text ?? "",
+      }));
   }
 }
