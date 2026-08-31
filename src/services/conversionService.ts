@@ -70,15 +70,17 @@ export async function proofCheck(
   return parseVerdict(raw);
 }
 
-/** First and last non-empty line of every page, in page order. */
+/** First and last anchor line of every page, in page order. */
 function extractAnchorLines(pages: Page[]): string[] {
   const anchors: string[] = [];
   for (const page of pages) {
-    // Bare `|` lines (common OCR table separators) count as blank lines.
+    // A line anchors only if it has at least one letter or digit. Lines that
+    // are empty or punctuation-only (`*`, `|`, `---`, `•`, …) are OCR/format
+    // separators, not content — never anchors.
     const lines = page.text
       .split("\n")
       .map((line) => line.trim())
-      .filter((line) => line.length > 0 && !/^\|+$/.test(line));
+      .filter((line) => /\p{L}|\p{N}/u.test(line));
     if (lines.length === 0) continue;
     anchors.push(lines[0]);
     if (lines.length > 1) anchors.push(lines[lines.length - 1]);
