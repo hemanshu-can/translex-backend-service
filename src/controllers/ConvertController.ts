@@ -5,7 +5,8 @@ import {
   Post,
   UseBefore,
 } from "routing-controllers";
-import { convertText } from "../lib/deepseek.js";
+import { convertText, type Page } from "../lib/deepseek.js";
+import { proofCheck, type ProofCheckResult } from "../services/conversionService.js";
 import { convertInputGuard } from "../middlewares/convertInputGuard.js";
 import { authGuard } from "../middlewares/authGuard.js";
 
@@ -13,11 +14,26 @@ import { authGuard } from "../middlewares/authGuard.js";
 @UseBefore(authGuard, convertInputGuard)
 export class ConvertController {
   @Post("/")
-  async convert(@Body() body: { text?: string }): Promise<{ text: string }> {
-    const text = body?.text?.trim() ?? "";
-    if (!text) {
-      throw new BadRequestError("Body must include non-empty text");
+  async convert(
+    @Body() body: { pages?: Page[] },
+  ): Promise<{ pages: Page[]; proofCheck: ProofCheckResult }> {
+    const pages = body?.pages;
+    if (!pages || pages.length === 0) {
+      throw new BadRequestError("Body must include a non-empty pages array");
     }
-    return { text: await convertText(text) };
+    const convertedPages = await convertText(pages);
+    // Auxiliary check — if the verification call itself fails, degrade to a
+    // failed verdict instead of losing the completed translation.
+    const proofCheckResult = await proofCheck(pages, convertedPages).catch(
+      (error) => {
+        console.error("Proof check failed:", error);
+        return {
+          matched: false,
+          confidence: 0,
+          notes: ["The verification call failed."],
+        };
+      },
+    );
+    return { pages: convertedPages, proofCheck: proofCheckResult };
   }
 }
